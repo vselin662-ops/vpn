@@ -24,13 +24,13 @@ export default function App() {
   // Sidebar Tabs
   const [activeTab, setActiveTab] = useState<TabType>('connection');
 
-  // Server state
+  // Server state (Updated protocols to VLESS and added SNI)
   const [servers, setServers] = useState<ServerLocation[]>([
-    { id: 'nl', nameRu: 'Нидерланды', nameEn: 'Netherlands', cityRu: 'Амстердам #4', cityEn: 'Amsterdam #4', flagColor: '#0039A6', emoji: '🇳🇱', baseIp: '185.242.114.94', ping: 22, load: 12, protocol: 'WireGuard' },
-    { id: 'de', nameRu: 'Германия', nameEn: 'Germany', cityRu: 'Франкфурт #2', cityEn: 'Frankfurt #2', flagColor: '#ED2939', emoji: '🇩🇪', baseIp: '46.165.2.14', ping: 18, load: 28, protocol: 'WireGuard' },
-    { id: 'uk', nameRu: 'Великобритания', nameEn: 'United Kingdom', cityRu: 'Лондон #1', cityEn: 'London #1', flagColor: '#002366', emoji: '🇬🇧', baseIp: '89.238.142.122', ping: 35, load: 8, protocol: 'OpenVPN' },
-    { id: 'us', nameRu: 'США', nameEn: 'United States', cityRu: 'Нью-Йорк #8', cityEn: 'New York #8', flagColor: '#B22234', emoji: '🇺🇸', baseIp: '198.51.100.5', ping: 104, load: 45, protocol: 'WireGuard' },
-    { id: 'fr', nameRu: 'Франция', nameEn: 'France', cityRu: 'Париж #3', cityEn: 'Paris #3', flagColor: '#3137FD', emoji: '🇫🇷', baseIp: '195.154.122.9', ping: 27, load: 19, protocol: 'ShadowSocks' },
+    { id: 'nl', nameRu: 'Нидерланды', nameEn: 'Netherlands', cityRu: 'Амстердам #4', cityEn: 'Amsterdam #4', flagColor: '#0039A6', emoji: '🇳🇱', baseIp: '185.242.114.94', ping: 22, load: 12, protocol: 'VLESS', sni: 'cloudflare.com' },
+    { id: 'de', nameRu: 'Германия', nameEn: 'Germany', cityRu: 'Франкфурт #2', cityEn: 'Frankfurt #2', flagColor: '#ED2939', emoji: '🇩🇪', baseIp: '46.165.2.14', ping: 18, load: 28, protocol: 'VLESS', sni: 'www.apple.com' },
+    { id: 'uk', nameRu: 'Великобритания', nameEn: 'United Kingdom', cityRu: 'Лондон #1', cityEn: 'London #1', flagColor: '#002366', emoji: '🇬🇧', baseIp: '89.238.142.122', ping: 35, load: 8, protocol: 'VLESS', sni: 'dl.google.com' },
+    { id: 'us', nameRu: 'США', nameEn: 'United States', cityRu: 'Нью-Йорк #8', cityEn: 'New York #8', flagColor: '#B22234', emoji: '🇺🇸', baseIp: '198.51.100.5', ping: 104, load: 45, protocol: 'VLESS', sni: 'cloudflare.com' },
+    { id: 'fr', nameRu: 'Франция', nameEn: 'France', cityRu: 'Париж #3', cityEn: 'Paris #3', flagColor: '#3137FD', emoji: '🇫🇷', baseIp: '195.154.122.9', ping: 27, load: 19, protocol: 'VLESS', sni: 'www.microsoft.com' },
   ]);
 
   const [selectedServerId, setSelectedServerId] = useState<string>('nl');
@@ -52,50 +52,49 @@ export default function App() {
   const [newServerName, setNewServerName] = useState('');
   const [newServerCity, setNewServerCity] = useState('');
   const [newServerIp, setNewServerIp] = useState('');
-  const [newServerPort, setNewServerPort] = useState('51820');
+  const [newServerPort, setNewServerPort] = useState('443'); // Changed default to 443 for REALITY
   const [newServerFlag, setNewServerFlag] = useState('🌐');
 
-  // Copy-Clipboard helper states
+  // Copy-Clipboard helper states (Updated 'conf' to 'config')
   const [copiedDocker, setCopiedDocker] = useState(false);
   const [copiedBash, setCopiedBash] = useState(false);
-  const [copiedConf, setCopiedConf] = useState(false);
+  const [copiedConfig, setCopiedConfig] = useState(false);
 
   // Self-hosted variables
   const [wizardIp, setWizardIp] = useState('185.242.114.94');
-  const [wizardPort, setWizardPort] = useState(51820);
+  const [wizardPort, setWizardPort] = useState(443); // Changed default to 443
   const [wizardPass, setWizardPass] = useState('UltraSecureVpn2026!');
   const [wizardDns, setWizardDns] = useState('1.1.1.1');
 
-  // Custom client configs
-  const [dnsInput, setDnsInput] = useState('1.1.1.1, 8.8.8.8');
-  const [clientAddress, setClientAddress] = useState('10.8.0.2/24');
-  const [clientPrivKey, setClientPrivKey] = useState('eB9M+ZgP4bN6Xv5Yh7t+z8y8r9j0kKqMvNuPx9V8X3c=');
-  const [clientPubKey, setClientPubKey] = useState('uL8K8nK9m2t3n8b4v7b6r9k0j7h5g4f3d2s1s0p9o8n=');
+  // REALITY Client configs (Replaced WireGuard states)
+  const [uuid, setUuid] = useState<string>('');
+  const [realityPublicKey, setRealityPublicKey] = useState<string>('');
+  const [shortId, setShortId] = useState<string>('');
+  const [sni, setSni] = useState<string>('cloudflare.com');
 
   // Interactive Diagnostic logs
   const [logs, setLogs] = useState<string[]>([
-    "Система запущенна. Все подсистемы Wireguard активны.",
-    "Конфигурация [wg0] загружена успешно.",
-    "Интерфейс поднят. UDP порт 51820 прослушивается.",
-    "Соединение с Амстердам #4 активно."
+    "Система запущена. Подсистемы VLESS/REALITY активны.",
+    "Конфигурация загружена успешно.",
+    "Интерфейс поднят. TCP порт 443 прослушивается.",
+    "Ожидание подключения к узлу..."
   ]);
 
   // Terminal state
   const [terminalLogs, setTerminalLogs] = useState<TerminalLog[]>([
-    { type: 'system', text: 'Diagnostic Terminal [Version 2.8.5] \n(c) 2026 Personal VPN. All servers operational.' },
-    { type: 'system', text: 'Status: Connected to Amsterdam #4 node.' },
-    { type: 'system', text: 'Type "help" to see list of available diagnosis tools.' }
+    { type: 'system', text: 'Diagnostic Terminal [Version 3.0.0-ANTI-DPI] \n(c) 2026 Piligrim VPN. All systems operational.' },
+    { type: 'system', text: 'Status: Ready. Type "help" to see list of available diagnosis tools.' }
   ]);
   const [commandValue, setCommandValue] = useState('');
   const terminalEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Dictionary translations
+  // Dictionary translations (Updated texts for REALITY)
   const t = {
     ru: {
       title: "Пилигрим VPN",
       subtitle: "Сверхбыстрый и безопасный доступ в один клик",
       engTitle: "Пилигрим VPN [Инженерная панель]",
-      engSubtitle: "Панель разработчика: автоматическая сборка VPS, ключи шифрования и дебаггер",
+      engSubtitle: "Панель разработчика: VLESS+REALITY, обход DPI и дебаггер",
       connTab: "Подключение",
       setupTab: "Установка Сервера",
       configTab: "Конфиг-клиент",
@@ -106,7 +105,7 @@ export default function App() {
       countryName: "Страна",
       cityLabel: "Город / Прокси тег",
       ipAddress: "IP Адрес сервера",
-      vpnPort: "Порт WireGuard",
+      vpnPort: "Порт (443)",
       save: "Сохранить",
       cancel: "Отмена",
       connected: "Подключено",
@@ -120,27 +119,27 @@ export default function App() {
       ping: "Пинг",
       dataUsed: "Данные",
       setupTitle: "Разверните свой собственный VPN сервер в пару кликов",
-      setupSubtitle: "Интерактивный мастер для автоматической установки туннеля на ваш VPS",
+      setupSubtitle: "Интерактивный мастер для автоматической установки Xray + REALITY на ваш VPS",
       customIp: "Введите IP вашего VPS сервера",
       customPort: "Порт VPN соединения",
       adminPass: "Админ-пароль панели",
       copyBtn: "Копировать команду",
       copied: "Скопировано в буфер!",
-      dockerTitle: "Способ 1: С помощью Docker (wg-easy)",
-      dockerDesc: "Идеально подходит для новичков. Автоматически разворачивает WireGuard туннель и красивую веб-панель для создания пользователей и скачивания QR-кодов в браузере.",
-      bashTitle: "Способ 2: Нативный инсталлятор Bash",
-      bashDesc: "Классический скрипт для мгновенной сборки ядра WireGuard без накладных расходов. Работает напрямую в Ubuntu, Debian, Centos.",
-      amneziaTitle: "Совет: Обход блокировок Роскомнадзора с Amnezia / ShadowSocks",
-      amneziaDesc: "Если операторы связи в вашем регионе блокируют Wireguard, используйте более защищенные протоколы через бесплатное ПО Amnezia VPN. Скрипт разворачивает OpenVPN over Cloak или Xray VLESS.",
+      dockerTitle: "Способ 1: Автоматический скрипт (Рекомендуется)",
+      dockerDesc: "Мгновенная установка Xray-core с протоколом VLESS + REALITY на ваш VPS.",
+      bashTitle: "Способ 2: Ручная настройка Bash",
+      bashDesc: "Классический скрипт для сборки ядра без накладных расходов Docker.",
+      amneziaTitle: "Совет: Обход жестких блокировок",
+      amneziaDesc: "Если операторы связи блокируют стандартные порты, используйте этот скрипт. Он настроит маскировку под cloudflare.com:443.",
       wgConfigTitle: "Генератор Клиентского Профиля",
-      wgConfigDesc: "Создайте индивидуальный конфигурационный файл (.conf), который можно загрузить в официальный клиент WireGuard на Android, iOS, Windows или MacOS.",
-      genKeysBtn: "Сгенерировать случайные ключи",
+      wgConfigDesc: "Создайте конфигурационный файл (.json), который можно загрузить в Hiddify, NekoBox или Sing-box.",
+      genKeysBtn: "Сгенерировать REALITY конфигурацию",
       clientIP: "Внутренний IP клиента",
       dnsServers: "Адрес DNS-серверов",
       serverPubKey: "Публичный ключ сервера (Base64)",
       endpoint: "Endpoint сервера",
       allowedIps: "Разрешенные IP (Allowed IPs)",
-      downloadConf: "Скачать файл client.conf",
+      downloadConf: "Скачать config.json",
       diagTitle: "Интерактивный Терминал Диагностики туннеля",
       diagDesc: "Тестируйте пропускную способность, пингуйте узлы и считывайте метрики состояния прямо в реальном времени.",
       terminalPlaceholder: "Введите 'help' для просмотра команд...",
@@ -150,7 +149,7 @@ export default function App() {
       title: "Piligrim VPN",
       subtitle: "Ultra fast and secure one-click navigation protection",
       engTitle: "Piligrim VPN [Engineer Panel]",
-      engSubtitle: "Developer hub: automated VPS installation, crypto key pairs, and diagnostic command line",
+      engSubtitle: "Developer hub: VLESS+REALITY, anti-DPI and diagnostic command line",
       connTab: "Connection State",
       setupTab: "Deploy Server Guide",
       configTab: "Client Configurator",
@@ -161,7 +160,7 @@ export default function App() {
       countryName: "Country Name",
       cityLabel: "City / Server Tag",
       ipAddress: "Server Target IP",
-      vpnPort: "Tunnel Gateway Port",
+      vpnPort: "Port (443)",
       save: "Save Node",
       cancel: "Cancel",
       connected: "Tunnel Active",
@@ -175,31 +174,31 @@ export default function App() {
       ping: "Latency Target",
       dataUsed: "Bytes Transmitted",
       setupTitle: "Deploy Your Personal VPN Server in 1-Click",
-      setupSubtitle: "Interactive wizard to initiate automated scripts on your virtualization server",
+      setupSubtitle: "Interactive wizard to initiate Xray + REALITY scripts on your virtualization server",
       customIp: "Enter Your Dedicated VPS Host IP",
       customPort: "Tunnel Server Port",
       adminPass: "Web Admin Password",
       copyBtn: "Copy Install Command",
       copied: "Copied successfully!",
-      dockerTitle: "Method 1: Using Docker Containers (wg-easy)",
-      dockerDesc: "Highly recommended. Spins up the VPN server alongside a beautiful, secure web dashboard where you can add accounts, download client configurations, and show real-time graphs.",
-      bashTitle: "Method 2: Direct Bash Installation Command",
-      bashDesc: "Fastest native command line tool setup to install WireGuard directly on metal Debian/Ubuntu. Perfect if you do not want Docker virtual layers.",
-      amneziaTitle: "Censorship Bypass: Advanced Obfuscated Amnezia / ShadowSocks",
-      amneziaDesc: "In countries with active Deep-Packet-Inspection (DPI) censorship, standard Wireguard can be blocked. Deploy OpenVPN over ShadowSocks or AmneziaWG for secure stealth tunnels.",
-      wgConfigTitle: "Secure client.conf Generator",
-      wgConfigDesc: "Generate the WireGuard configuration file. Save and import it to the mobile or desktop WireGuard clients instantly.",
-      genKeysBtn: "Generate Keypair Pair (Curve25519)",
+      dockerTitle: "Method 1: Automated Script (Recommended)",
+      dockerDesc: "Instant deployment of Xray-core with VLESS + REALITY protocol on your VPS.",
+      bashTitle: "Method 2: Manual Bash Setup",
+      bashDesc: "Classic script to build the core without Docker virtual layers.",
+      amneziaTitle: "Tip: Bypassing strict censorship",
+      amneziaDesc: "If your ISP blocks standard ports, use this script. It configures masking as cloudflare.com:443.",
+      wgConfigTitle: "Secure Client Profile Generator",
+      wgConfigDesc: "Generate configuration file (.json) for Hiddify, NekoBox or Sing-box clients instantly.",
+      genKeysBtn: "Generate REALITY Config",
       clientIP: "Local Subnet Client IP",
       dnsServers: "Client Domain Name System (DNS)",
       serverPubKey: "Server Public Key (b64)",
       endpoint: "Socket Endpoint Connection",
       allowedIps: "Routing Mask Rules (Allowed IPs)",
-      downloadConf: "Download wg_client.conf",
-      diagTitle: "VPN Diagnostic Shell Shell",
+      downloadConf: "Download config.json",
+      diagTitle: "VPN Diagnostic Shell",
       diagDesc: "Type utility queries to evaluate routing metrics, ping endpoints or test cryptographic handshakes.",
       terminalPlaceholder: "Type 'help' to review list of functions...",
-      activeTunnel: "Active tunnel interface wg0"
+      activeTunnel: "Active tunnel interface"
     }
   };
 
@@ -208,35 +207,32 @@ export default function App() {
   // Helper: Get active server
   const activeServer = servers.find(s => s.id === selectedServerId) || servers[0];
 
-  // WireGuard real base64 mock generator
-  const generateKeysPair = () => {
+  // REALITY config generator (Replaced WireGuard generator)
+  const generateRealityConfig = () => {
     try {
-      const privBytes = new Uint8Array(32);
-      window.crypto.getRandomValues(privBytes);
-      let privStr = '';
-      for (let i = 0; i < privBytes.length; i++) {
-        privStr += String.fromCharCode(privBytes[i]);
-      }
-      const privateKey = btoa(privStr);
+      // Generate UUID
+      const newUuid = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+      
+      // Generate mock Public Key (Base64 format)
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+      const newPubKey = Array.from({length: 43}, () => chars[Math.floor(Math.random() * chars.length)]).join('') + '=';
+      
+      // Generate Short ID (8 hex chars)
+      const newShortId = Array.from({length: 8}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
 
-      const pubBytes = new Uint8Array(32);
-      for (let i = 0; i < 32; i++) {
-        pubBytes[i] = (privBytes[i] ^ 0x6E) % 256;
-      }
-      let pubStr = '';
-      for (let i = 0; i < pubBytes.length; i++) {
-        pubStr += String.fromCharCode(pubBytes[i]);
-      }
-      const publicKey = btoa(pubStr);
+      setUuid(newUuid);
+      setRealityPublicKey(newPubKey);
+      setShortId(newShortId);
+      setSni(activeServer.sni || 'cloudflare.com');
 
-      setClientPrivKey(privateKey);
-      setClientPubKey(publicKey);
-
-      addLog(`[Криптография] Сгенерированы новые ключи Curve25519. Приватный ключ: ${privateKey.substring(0, 8)}...`);
+      addLog(`[Криптография] Сгенерирована новая конфигурация REALITY. UUID: ${newUuid.substring(0, 8)}...`);
     } catch (e) {
-      // Fallback
-      setClientPrivKey("wN+PrivateKeyMock" + Math.random().toString(36).substring(2, 7) + "=");
-      setClientPubKey("pB+PublicKeyMock" + Math.random().toString(36).substring(2, 7) + "=");
+      setUuid("mock-uuid-1234-5678-90ab-cdef12345678");
+      setRealityPublicKey("mockPublicKeyBase64StringForTestingPurposesOnly=");
+      setShortId("12345678");
     }
   };
 
@@ -299,7 +295,7 @@ export default function App() {
     setWizardIp(activeServer.baseIp);
   }, [selectedServerId, activeServer.baseIp]);
 
-  // Handle interactive connection sequence
+  // Handle interactive connection sequence (Updated logs for REALITY)
   const handleConnectToggle = () => {
     if (isConnected) {
       setIsConnected(false);
@@ -307,19 +303,19 @@ export default function App() {
       addLog(`Соединение с ${activeServer.nameRu} разорвано пользователем.`);
     } else {
       setIsConnecting(true);
-      addLog(`Запуск соединения с ${activeServer.nameRu} (${activeServer.baseIp})...`);
+      addLog(`Запуск рукопожатия REALITY с ${activeServer.nameRu} (${activeServer.baseIp})...`);
       
       setTimeout(() => {
-        addLog(`Инициализация рукопожатия WireGuard... отправка зашифрованных UDP пакетов.`);
+        addLog(`Маскировка TLS: имитация запроса к ${sni}. Отправка фрагментированных пакетов...`);
         
         setTimeout(() => {
-          addLog(`Успешный обмен ключами с пиром [${activeServer.baseIp}]. Время задержки: ${activeServer.ping} ms.`);
+          addLog(`Успешный обмен ключами XTLS-Vision. Время задержки: ${activeServer.ping} ms.`);
           
           setTimeout(() => {
             setIsConnected(true);
             setIsConnecting(false);
             setActiveTimeSec(0);
-            addLog(`Туннель запущен. Маршрутизация IPv4/6 перехвачена на wg0.`);
+            addLog(`Туннель VLESS+REALITY запущен. Маршрутизация перехвачена.`);
           }, 400);
         }, 500);
       }, 400);
@@ -347,7 +343,7 @@ export default function App() {
     }
   };
 
-  // Add custom user VPS server node
+  // Add custom user VPS server node (Updated protocol to VLESS)
   const handleAddServer = (e: FormEvent) => {
     e.preventDefault();
     if (!newServerName || !newServerIp) return;
@@ -367,7 +363,8 @@ export default function App() {
       baseIp: parsedIp,
       ping: validatedPing,
       load: 0,
-      protocol: 'WireGuard'
+      protocol: 'VLESS',
+      sni: 'cloudflare.com'
     };
 
     setServers(prev => [...prev, added]);
@@ -379,11 +376,11 @@ export default function App() {
     setNewServerName('');
     setNewServerCity('');
     setNewServerIp('');
-    setNewServerPort('51820');
+    setNewServerPort('443');
   };
 
-  // Copy with tooltip state transition
-  const triggerCopy = (code: string, type: 'docker' | 'bash' | 'conf') => {
+  // Copy with tooltip state transition (Updated to handle 'config')
+  const triggerCopy = (code: string, type: 'docker' | 'bash' | 'config') => {
     navigator.clipboard.writeText(code);
     if (type === 'docker') {
       setCopiedDocker(true);
@@ -391,34 +388,39 @@ export default function App() {
     } else if (type === 'bash') {
       setCopiedBash(true);
       setTimeout(() => setCopiedBash(false), 2000);
-    } else {
-      setCopiedConf(true);
-      setTimeout(() => setCopiedConf(false), 2000);
+    } else if (type === 'config') {
+      setCopiedConfig(true);
+      setTimeout(() => setCopiedConfig(false), 2000);
     }
   };
 
-  // Native config download
-  const handleDownloadConfFile = () => {
-    const configContent = `[Interface]
-# Имя клиента: pc-client-1
-PrivateKey = ${clientPrivKey}
-Address = ${clientAddress}
-DNS = ${dnsInput}
-
-[Peer]
-PublicKey = ${clientPubKey}
-Endpoint = ${activeServer.baseIp}:51820
-AllowedIPs = 0.0.0.0/0, ::/0
-PersistentKeepalive = 25`;
-
-    const blob = new Blob([configContent], { type: 'text/plain' });
+  // Native JSON config download (Replaced WireGuard conf download)
+  const handleDownloadJsonFile = () => {
+    const configData = {
+      log: { level: "info", timestamp: true },
+      inbounds: [
+        { type: "tun", tag: "piligrim-tun", inet4_address: "172.19.0.1/30", auto_route: true, strict_route: true, stack: "mixed", sniff: true }
+      ],
+      outbounds: [
+        { 
+          type: "vless", tag: "piligrim-proxy", server: activeServer.baseIp, server_port: 443, uuid: uuid, flow: "xtls-rprx-vision", 
+          tls: { enabled: true, server_name: sni, utls: { enabled: true, fingerprint: "chrome" }, reality: { enabled: true, public_key: realityPublicKey, short_id: shortId } }, 
+          transport: { type: "tcp" }, packet_encoding: "xudp" 
+        },
+        { type: "direct", tag: "direct" }, { type: "block", tag: "block" }, { type: "dns", tag: "dns-out" }
+      ],
+      route: { rules: [{ protocol: "dns", outbound: "dns-out" }, { ip_is_private: true, outbound: "direct" }], auto_detect_interface: true }
+    };
+    
+    const configContent = JSON.stringify(configData, null, 2);
+    const blob = new Blob([configContent], { type: 'application/json' });
     const fileUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = fileUrl;
-    link.download = `personal_vpn_${activeServer.cityEn.toLowerCase().replace(/\s+/g, '_')}_wg.conf`;
+    link.download = `piligrim_reality_${activeServer.cityEn.toLowerCase().replace(/\s+/g, '_')}.json`;
     link.click();
     URL.revokeObjectURL(fileUrl);
-    addLog(`Скачан конфигурационный файл client.conf для сервера ${activeServer.nameRu}`);
+    addLog(`Скачан конфигурационный файл JSON для сервера ${activeServer.nameRu}`);
   };
 
   // Format dynamic connection timer
@@ -431,7 +433,7 @@ PersistentKeepalive = 25`;
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   };
 
-  // Diagnostic shell command submission
+  // Diagnostic shell command submission (Updated outputs for VLESS)
   const handleCommandSubmit = (e: FormEvent) => {
     e.preventDefault();
     const cmd = commandValue.trim().toLowerCase();
@@ -445,9 +447,8 @@ PersistentKeepalive = 25`;
         newLogs.push(
           { type: 'output', text: 'Персональная VPN Утилита диагностики [Справка]:' },
           { type: 'output', text: '  ping        - Тест пакетов задержки до удаленного хоста VPN' },
-          { type: 'output', text: '  wg show     - Позволяет считать сессию WireGuard и ключи пира' },
+          { type: 'output', text: '  status      - Краткие сведения о состоянии запущенного туннеля VLESS' },
           { type: 'output', text: '  speedtest   - Запуск имитации замера пиковой скорости канала' },
-          { type: 'output', text: '  status      - Краткие сведения о состояния запущенного туннеля' },
           { type: 'output', text: '  server-info - Технические спецификации и характеристики VPS' },
           { type: 'output', text: '  clear       - Очистить консоль ввода' }
         );
@@ -457,11 +458,11 @@ PersistentKeepalive = 25`;
       } else if (cmd === 'status') {
         newLogs.push({
           type: 'output',
-          text: `Туннель: [wg-client0]\nСтатус: ${isConnected ? 'АКТИВЕН / CONNECTED' : 'ОТКЛЮЧЕН / DEACTIVATED'}\nИнтерфейс IP: ${clientAddress}\nВходящие/Исходящие DNS: ${dnsInput}`
+          text: `Туннель: [piligrim-proxy]\nСтатус: ${isConnected ? 'АКТИВЕН (VLESS+REALITY)' : 'ОТКЛЮЧЕН'}\nМаскировка SNI: ${sni}\nFlow: xtls-rprx-vision`
         });
       } else if (cmd === 'ping') {
         if (!isConnected) {
-          newLogs.push({ type: 'output', text: 'Ошибка: Сетевой интерфейс wg0 выключен. Хост временно недоступен.' });
+          newLogs.push({ type: 'output', text: 'Ошибка: Туннель не активен. Хост временно недоступен.' });
         } else {
           const nodeIp = activeServer.baseIp;
           newLogs.push(
@@ -474,28 +475,13 @@ PersistentKeepalive = 25`;
             { type: 'output', text: `4 пакетов передано, 4 получено, 0% потеряно, средний rtt: ${stats.ping + 1} ms` }
           );
         }
-      } else if (cmd === 'wg show') {
-        if (!isConnected) {
-          newLogs.push({ type: 'output', text: 'Интерфейс Wireguard (туннель wg-client0) не запущен.' });
-        } else {
-          newLogs.push(
-            { type: 'output', text: 'interface: wg-client0' },
-            { type: 'output', text: `  public key: ${clientPrivKey.replace(/./g, '*').substring(0, 16)}... (скрыт)` },
-            { type: 'output', text: '  listening port: 51820' },
-            { type: 'output', text: `  peer: ${clientPubKey.substring(0, 12)}...` },
-            { type: 'output', text: `    endpoint: ${activeServer.baseIp}:51820` },
-            { type: 'output', text: `    allowed ips: ${clientAddress}` },
-            { type: 'output', text: `    handshake: 41 секунду назад` },
-            { type: 'output', text: `    transfer: ${stats.dataTransmitted.toFixed(2)} MB получено, ${(stats.dataTransmitted / 5).toFixed(2)} MB отправлено` }
-          );
-        }
       } else if (cmd === 'server-info') {
         newLogs.push(
-          { type: 'output', text: `Имя узла: node-${activeServer.id}.personal-vpn` },
+          { type: 'output', text: `Имя узла: node-${activeServer.id}.piligrim-vpn` },
           { type: 'output', text: `IP адрес: ${activeServer.baseIp}` },
           { type: 'output', text: 'OC: Ubuntu 24.04 LTS x86_64 Core-Linux' },
           { type: 'output', text: 'Виртуализация: KVM QEMU Hypervisor' },
-          { type: 'output', text: 'Версия ПО: wireguard-tools v1.0.2' },
+          { type: 'output', text: 'Версия ПО: xray-core v1.8.x' },
           { type: 'output', text: 'Канал аплинка: 10 Gbps Symmetric Port' },
           { type: 'output', text: `Пинг-тест: среднее значение ${stats.ping} ms` }
         );
@@ -509,7 +495,6 @@ PersistentKeepalive = 25`;
               { type: 'output', text: `  UPLOAD   (Отдача):   [=================== ] ${stats.uploadSpeed} Mbps` },
               { type: 'output', text: `  PING: ${stats.ping} ms  | JITTER: 2.1 ms` }
             ]);
-            // Scroll
             setTimeout(() => {
               terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
             }, 50);
@@ -546,36 +531,17 @@ PersistentKeepalive = 25`;
 
   const speedPoints = getSpeedGraphPoints();
 
-  // Code Strings for Interactive Setup Scripts
-  const dockerCode = `docker run -d \\
-  --name=wg-easy \\
-  -e WG_HOST=${wizardIp} \\
-  -e PASSWORD=${wizardPass} \\
-  -e PORT=${wizardPort} \\
-  -e WG_PORT=${wizardPort} \\
-  -e WG_DEFAULT_DNS=${wizardDns} \\
-  -v ~/.wg-easy:/etc/wireguard \\
-  -p ${wizardPort}:${wizardPort}/udp \\
-  -p 51821:51821/tcp \\
-  --cap-add=NET_ADMIN \\
-  --cap-add=SYS_MODULE \\
-  --sysctl="net.ipv4.conf.all.src_valid_mark=1" \\
-  --sysctl="net.ipv4.ip_forward=1" \\
-  --restart unless-stopped \\
-  ghcr.io/wg-easy/wg-easy`;
+  // Code Strings for Interactive Setup Scripts (Updated for Xray/REALITY)
+  const dockerCode = `bash -c "$(curl -L https://raw.githubusercontent.com/vselin662-ops/vpn/main/deploy.sh)"`;
+  
+  const bashCode = `wget -O deploy.sh https://raw.githubusercontent.com/vselin662-ops/vpn/main/deploy.sh
+chmod +x deploy.sh
+sudo ./deploy.sh`;
 
-  const bashCode = `wget -O wireguard-install.sh https://raw.githubusercontent.com/angristan/wireguard-install/master/wireguard-install.sh
-chmod +x wireguard-install.sh
-sudo AUTO_INSTALL=y \\
-     SERVER_IP=${wizardIp} \\
-     PORT=${wizardPort} \\
-     DNS_SERVER=${wizardDns} \\
-     ./wireguard-install.sh`;
-
-  const amneziaGuide = `1. Скачайте бесплатный клиент Amnezia VPN на Android, iOS, Windows или MacOS.
-2. Подключитесь к вашему новому VPS серверу: напишите IP: ${wizardIp}, пароль root от VPS.
-3. Выберите протокол: "AmneziaWG", "VLESS-Xray" или "OpenVPN over Cloak".
-4. Нажмите "Настроить" — Amnezia сама установит Docker и развернет обход блокировок!`;
+  const amneziaGuide = `1. Скрипт автоматически установит Xray-core.
+2. Сгенерирует криптографические ключи REALITY.
+3. Настроит маскировку трафика под cloudflare.com:443.
+4. Запустит службу с автозагрузкой и защитой от перезагрузки.`;
 
   return (
     <div id="vpn_app_shell" className="flex h-screen w-full bg-[#030406] text-[#E0E0E0] overflow-hidden font-sans select-none antialiased relative">
@@ -701,19 +667,19 @@ sudo AUTO_INSTALL=y \\
 
             {activeTab === 'config' && isEngineerMode && (
               <Configurator 
-                dnsInput={dnsInput}
-                setDnsInput={setDnsInput}
-                clientAddress={clientAddress}
-                setClientAddress={setClientAddress}
-                clientPrivKey={clientPrivKey}
-                setClientPrivKey={setClientPrivKey}
-                clientPubKey={clientPubKey}
-                setClientPubKey={setClientPubKey}
-                generateKeysPair={generateKeysPair}
-                handleDownloadConfFile={handleDownloadConfFile}
+                uuid={uuid}
+                setUuid={setUuid}
+                realityPublicKey={realityPublicKey}
+                setRealityPublicKey={setRealityPublicKey}
+                shortId={shortId}
+                setShortId={setShortId}
+                sni={sni}
+                setSni={setSni}
+                generateRealityConfig={generateRealityConfig}
+                handleDownloadJsonFile={handleDownloadJsonFile}
                 activeServer={activeServer}
                 triggerCopy={triggerCopy}
-                copiedConf={copiedConf}
+                copiedConfig={copiedConfig}
                 lang={lang}
                 t={t}
               />
@@ -790,7 +756,7 @@ sudo AUTO_INSTALL=y \\
           {/* Copyright branding footer */}
           <footer className="w-full text-center text-zinc-600 text-[10px] uppercase tracking-widest mt-8 pt-4 border-t border-white/[0.04] select-none font-mono relative z-10 hidden md:block">
             {isEngineerMode ? (
-              <span>🛡️ Пилигрим VPN Tunnel Engine &bull; Version 2.8.5-STABLE &bull; ChaCha20 Keys &bull; 2026</span>
+              <span>🛡️ Пилигрим VPN Tunnel Engine &bull; Version 3.0.0-ANTI-DPI &bull; VLESS+REALITY &bull; 2026</span>
             ) : (
               <span>🛡️ Пилигрим VPN &bull; {lang === 'ru' ? 'Сверхбыстрое и безопасное интернет-соединение' : 'Ultra-fast and secure internet connection'}</span>
             )}
@@ -879,11 +845,11 @@ sudo AUTO_INSTALL=y \\
                 </span>
                 <p className="text-xs text-zinc-400/80 leading-normal mb-3 font-sans">
                   {lang === 'ru' 
-                    ? "Узлы связи используют современную криптографическую подпись для верификации и предотвращения цензуры провайдера."
-                    : "Communication sockets use robust cryptographic signatures to authorize handshakes and avoid provider-level censorship."}
+                    ? "Узлы связи используют современную криптографическую подпись REALITY для верификации и предотвращения цензуры провайдера."
+                    : "Communication sockets use robust REALITY cryptographic signatures to authorize handshakes and avoid provider-level censorship."}
                 </p>
                 <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 border-t border-white/[0.03] pt-2">
-                  <span>INTERFACE: wg0</span>
+                  <span>INTERFACE: piligrim-proxy</span>
                   <span>LOAD: 1.4%</span>
                 </div>
               </div>
@@ -891,10 +857,10 @@ sudo AUTO_INSTALL=y \\
               {/* Developer copyright info */}
               <div className="text-center pt-2">
                 <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest leading-relaxed">
-                  🛡️ Пилигрим VPN &bull; version 2.8.5
+                  🛡️ Пилигрим VPN &bull; version 3.0.0
                 </p>
                 <p className="text-[9px] font-mono text-zinc-700 mt-1 uppercase tracking-wider">
-                  Engineered in 2026 for ultimate digital comfort
+                  Engineered in 2026 for ultimate digital freedom
                 </p>
               </div>
 
