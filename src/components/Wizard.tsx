@@ -16,7 +16,8 @@ interface WizardProps {
   amneziaGuide: string;
   copiedDocker: boolean;
   copiedBash: boolean;
-  triggerCopy: (c: string, type: 'docker' | 'bash' | 'conf') => void;
+  // ИСПРАВЛЕНО: 'conf' заменено на 'config', чтобы совпадать с App.tsx
+  triggerCopy: (c: string, type: 'docker' | 'bash' | 'config') => void;
 }
 
 export default function Wizard({
