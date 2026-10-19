@@ -1,0 +1,6 @@
+{
+  "name": "Пилигрим VPN",
+  "description": "Простой и удобный VPN-клиент в один клик с расширенной инженерной панелью для настройки серверов.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
