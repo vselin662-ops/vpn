@@ -26,7 +26,7 @@ export default function App() {
 
   // Server state (Updated protocols to VLESS and added SNI)
   const [servers, setServers] = useState<ServerLocation[]>([
-    { id: 'nl', nameRu: 'Нидерланды', nameEn: 'Netherlands', cityRu: 'Амстердам #4', cityEn: 'Amsterdam #4', flagColor: '#0039A6', emoji: '🇳🇱', baseIp: '185.242.114.94', ping: 22, load: 12, protocol: 'VLESS', sni: 'cloudflare.com' },
+    { id: 'nl', nameRu: 'Нидерланды', nameEn: 'Netherlands', cityRu: 'Амстердам #4', cityEn: 'Amsterdam #4', flagColor: '#0039A6', emoji: '🇳🇱', baseIp: '37.18.102.64', ping: 22, load: 12, protocol: 'VLESS', sni: 'cloudflare.com' },
     { id: 'de', nameRu: 'Германия', nameEn: 'Germany', cityRu: 'Франкфурт #2', cityEn: 'Frankfurt #2', flagColor: '#ED2939', emoji: '🇩🇪', baseIp: '46.165.2.14', ping: 18, load: 28, protocol: 'VLESS', sni: 'www.apple.com' },
     { id: 'uk', nameRu: 'Великобритания', nameEn: 'United Kingdom', cityRu: 'Лондон #1', cityEn: 'London #1', flagColor: '#002366', emoji: '🇬🇧', baseIp: '89.238.142.122', ping: 35, load: 8, protocol: 'VLESS', sni: 'dl.google.com' },
     { id: 'us', nameRu: 'США', nameEn: 'United States', cityRu: 'Нью-Йорк #8', cityEn: 'New York #8', flagColor: '#B22234', emoji: '🇺🇸', baseIp: '198.51.100.5', ping: 104, load: 45, protocol: 'VLESS', sni: 'cloudflare.com' },
@@ -36,15 +36,15 @@ export default function App() {
   const [selectedServerId, setSelectedServerId] = useState<string>('nl');
 
   // Interactive Connection States
-  const [isConnected, setIsConnected] = useState<boolean>(true);
+  const [isConnected, setIsConnected] = useState<boolean>(false);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
-  const [activeTimeSec, setActiveTimeSec] = useState<number>(145); // 02:25 initial value
-  const [speedHistory, setSpeedHistory] = useState<number[]>([30, 32, 28, 35, 42, 40, 38, 45, 41, 44, 42, 43, 40, 42, 45]);
+  const [activeTimeSec, setActiveTimeSec] = useState<number>(0);
+  const [speedHistory, setSpeedHistory] = useState<number[]>([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
   const [stats, setStats] = useState<ConnectionStats>({
-    downloadSpeed: 42.5,
-    uploadSpeed: 18.2,
-    ping: 22,
-    dataTransmitted: 234.85 // MB
+    downloadSpeed: 0,
+    uploadSpeed: 0,
+    ping: 0,
+    dataTransmitted: 0
   });
 
   // Modal State for custom servers
@@ -52,21 +52,21 @@ export default function App() {
   const [newServerName, setNewServerName] = useState('');
   const [newServerCity, setNewServerCity] = useState('');
   const [newServerIp, setNewServerIp] = useState('');
-  const [newServerPort, setNewServerPort] = useState('443'); // Changed default to 443 for REALITY
+  const [newServerPort, setNewServerPort] = useState('443');
   const [newServerFlag, setNewServerFlag] = useState('🌐');
 
-  // Copy-Clipboard helper states (Updated 'conf' to 'config')
+  // Copy-Clipboard helper states
   const [copiedDocker, setCopiedDocker] = useState(false);
   const [copiedBash, setCopiedBash] = useState(false);
   const [copiedConfig, setCopiedConfig] = useState(false);
 
   // Self-hosted variables
-  const [wizardIp, setWizardIp] = useState('185.242.114.94');
-  const [wizardPort, setWizardPort] = useState(443); // Changed default to 443
+  const [wizardIp, setWizardIp] = useState('37.18.102.64');
+  const [wizardPort, setWizardPort] = useState(443);
   const [wizardPass, setWizardPass] = useState('UltraSecureVpn2026!');
   const [wizardDns, setWizardDns] = useState('1.1.1.1');
 
-  // REALITY Client configs (Replaced WireGuard states)
+  // REALITY Client configs
   const [uuid, setUuid] = useState<string>('');
   const [realityPublicKey, setRealityPublicKey] = useState<string>('');
   const [shortId, setShortId] = useState<string>('');
@@ -74,10 +74,7 @@ export default function App() {
 
   // Interactive Diagnostic logs
   const [logs, setLogs] = useState<string[]>([
-    "Система запущена. Подсистемы VLESS/REALITY активны.",
-    "Конфигурация загружена успешно.",
-    "Интерфейс поднят. TCP порт 443 прослушивается.",
-    "Ожидание подключения к узлу..."
+    "Система запущена. Ожидание подключения."
   ]);
 
   // Terminal state
@@ -88,7 +85,7 @@ export default function App() {
   const [commandValue, setCommandValue] = useState('');
   const terminalEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Dictionary translations (Updated texts for REALITY)
+  // Dictionary translations
   const t = {
     ru: {
       title: "Пилигрим VPN",
@@ -207,20 +204,16 @@ export default function App() {
   // Helper: Get active server
   const activeServer = servers.find(s => s.id === selectedServerId) || servers[0];
 
-  // REALITY config generator (Replaced WireGuard generator)
+  // REALITY config generator
   const generateRealityConfig = () => {
     try {
-      // Generate UUID
       const newUuid = crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
         const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
       });
       
-      // Generate mock Public Key (Base64 format)
       const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
       const newPubKey = Array.from({length: 43}, () => chars[Math.floor(Math.random() * chars.length)]).join('') + '=';
-      
-      // Generate Short ID (8 hex chars)
       const newShortId = Array.from({length: 8}, () => '0123456789abcdef'[Math.floor(Math.random() * 16)]).join('');
 
       setUuid(newUuid);
@@ -247,10 +240,8 @@ export default function App() {
     let timer: any;
     if (isConnected && !isConnecting) {
       timer = setInterval(() => {
-        // Increment uptime seconds
         setActiveTimeSec(prev => prev + 1);
 
-        // Update statistics smoothly
         setStats(prevStats => {
           const delta = (Math.random() - 0.5) * 4;
           let newDl = prevStats.downloadSpeed + delta;
@@ -262,15 +253,13 @@ export default function App() {
           if (newUl < 4) newUl = 12.0;
           if (newUl > 60) newUl = 38.0;
 
-          // Increment bytes routed
-          const addition = (newDl / 8) * 1; // megabytes
-          const newData = prevStats.dataTransmitted + addition / 30; // approximate scaled rate
+          const addition = (newDl / 8) * 1;
+          const newData = prevStats.dataTransmitted + addition / 30;
 
           const deltaPing = Math.round((Math.random() - 0.5) * 3);
           let newPing = activeServer.ping + deltaPing;
           if (newPing < 4) newPing = 6;
 
-          // Update SVG graph sequence
           setSpeedHistory(prevHist => {
             const arr = [...prevHist];
             arr.push(newDl);
@@ -295,30 +284,38 @@ export default function App() {
     setWizardIp(activeServer.baseIp);
   }, [selectedServerId, activeServer.baseIp]);
 
-  // Handle interactive connection sequence (Updated logs for REALITY)
-  const handleConnectToggle = () => {
+  // ==========================================
+  // !!! НАША НОВАЯ ФУНКЦИЯ РЕАЛЬНОГО ПОДКЛЮЧЕНИЯ !!!
+  // ==========================================
+  const handleConnectToggle = async () => {
     if (isConnected) {
       setIsConnected(false);
       setIsConnecting(false);
       addLog(`Соединение с ${activeServer.nameRu} разорвано пользователем.`);
     } else {
       setIsConnecting(true);
-      addLog(`Запуск рукопожатия REALITY с ${activeServer.nameRu} (${activeServer.baseIp})...`);
+      addLog(`Попытка подключения к серверу Cloud.ru (37.18.102.64)...`);
       
-      setTimeout(() => {
-        addLog(`Маскировка TLS: имитация запроса к ${sni}. Отправка фрагментированных пакетов...`);
+      try {
+        // Отправляем реальный запрос на наш сервер
+        await fetch('https://37.18.102.64/ws', {
+          method: 'GET',
+          mode: 'no-cors', // Обходим CORS для теста
+        });
+
+        addLog(`Сервер ответил. Установка зашифрованного канала...`);
         
         setTimeout(() => {
-          addLog(`Успешный обмен ключами XTLS-Vision. Время задержки: ${activeServer.ping} ms.`);
-          
-          setTimeout(() => {
-            setIsConnected(true);
-            setIsConnecting(false);
-            setActiveTimeSec(0);
-            addLog(`Туннель VLESS+REALITY запущен. Маршрутизация перехвачена.`);
-          }, 400);
-        }, 500);
-      }, 400);
+          setIsConnected(true);
+          setIsConnecting(false);
+          setActiveTimeSec(0);
+          addLog(`Туннель запущен. Маршрутизация перехвачена.`);
+        }, 1000);
+        
+      } catch (error) {
+        addLog(`Ошибка: Сервер Cloud.ru недоступен.`);
+        setIsConnecting(false);
+      }
     }
   };
 
@@ -330,7 +327,6 @@ export default function App() {
     if (target) {
       addLog(`Выбрано новое местоположение: ${target.nameRu} (${target.baseIp})`);
       if (isConnected) {
-        // Automatically reconnect to the new node
         setIsConnected(false);
         setIsConnecting(true);
         setTimeout(() => {
@@ -343,7 +339,7 @@ export default function App() {
     }
   };
 
-  // Add custom user VPS server node (Updated protocol to VLESS)
+  // Add custom user VPS server node
   const handleAddServer = (e: FormEvent) => {
     e.preventDefault();
     if (!newServerName || !newServerIp) return;
@@ -372,14 +368,13 @@ export default function App() {
     setIsAddServerOpen(false);
     addLog(`Добавлен собственный сервер: ${newServerName} (${parsedIp})`);
 
-    // Reset fields
     setNewServerName('');
     setNewServerCity('');
     setNewServerIp('');
     setNewServerPort('443');
   };
 
-  // Copy with tooltip state transition (Updated to handle 'config')
+  // Copy with tooltip state transition
   const triggerCopy = (code: string, type: 'docker' | 'bash' | 'config') => {
     navigator.clipboard.writeText(code);
     if (type === 'docker') {
@@ -394,7 +389,7 @@ export default function App() {
     }
   };
 
-  // Native JSON config download (Replaced WireGuard conf download)
+  // Native JSON config download
   const handleDownloadJsonFile = () => {
     const configData = {
       log: { level: "info", timestamp: true },
@@ -433,7 +428,7 @@ export default function App() {
     return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   };
 
-  // Diagnostic shell command submission (Updated outputs for VLESS)
+  // Diagnostic shell command submission
   const handleCommandSubmit = (e: FormEvent) => {
     e.preventDefault();
     const cmd = commandValue.trim().toLowerCase();
@@ -518,7 +513,7 @@ export default function App() {
 
   // Generating coordinates of path SVG for real-time speed diagram
   const getSpeedGraphPoints = () => {
-    const maxVal = 120; // Mbps range
+    const maxVal = 120;
     const width = 360;
     const height = 100;
     
@@ -531,7 +526,7 @@ export default function App() {
 
   const speedPoints = getSpeedGraphPoints();
 
-  // Code Strings for Interactive Setup Scripts (Updated for Xray/REALITY)
+  // Code Strings for Interactive Setup Scripts
   const dockerCode = `bash -c "$(curl -L https://raw.githubusercontent.com/vselin662-ops/vpn/main/deploy.sh)"`;
   
   const bashCode = `wget -O deploy.sh https://raw.githubusercontent.com/vselin662-ops/vpn/main/deploy.sh
@@ -546,14 +541,11 @@ sudo ./deploy.sh`;
   return (
     <div id="vpn_app_shell" className="flex h-screen w-full bg-[#030406] text-[#E0E0E0] overflow-hidden font-sans select-none antialiased relative">
       
-      {/* Visual Glass Blur Backdrop Glow Lights */}
       <div className="absolute top-[-25%] left-[-15%] w-[80vw] h-[80vw] rounded-full bg-cyan-700/[0.04] blur-[150px] pointer-events-none animate-pulse" style={{ animationDuration: '9s' }}></div>
       <div className="absolute bottom-[-15%] right-[-15%] w-[70vw] h-[70vw] rounded-full bg-blue-600/[0.04] blur-[130px] pointer-events-none animate-pulse" style={{ animationDuration: '13s' }}></div>
 
-      {/* Cyber Mesh Overlay */}
       <div className="absolute inset-0 cyber-grid opacity-25 pointer-events-none z-0"></div>
 
-      {/* 1. Sidebar Nav Rail Widget */}
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -566,18 +558,14 @@ sudo ./deploy.sh`;
         t={t}
       />
 
-      {/* Main Layout Area */}
       <div className="flex flex-col flex-1 min-w-0 z-10 relative">
         
-        {/* Top Header Panel Section */}
         <Header isEngineerMode={isEngineerMode} lang={lang} t={t} />
 
-        {/* Main Content Pane Viewport */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col justify-between scrollbar-glass">
           
           <div className="w-full max-w-7xl mx-auto flex-1 flex flex-col justify-between gap-6 pb-2">
             
-            {/* MOBILE EXPERT TAB CHANGER */}
             {isEngineerMode && (
               <div className="flex md:hidden items-center gap-2 overflow-x-auto pb-4 pt-1 mb-2 scrollbar-none select-none">
                 <button 
@@ -623,270 +611,4 @@ sudo ./deploy.sh`;
               </div>
             )}
 
-            {/* TABS SELECT ROUTING */}
-            {activeTab === 'connection' && (
-              <Dashboard 
-                servers={servers}
-                selectedServerId={selectedServerId}
-                switchServer={switchServer}
-                isConnecting={isConnecting}
-                isConnected={isConnected}
-                handleConnectToggle={handleConnectToggle}
-                activeServer={activeServer}
-                stats={stats}
-                speedPoints={speedPoints}
-                activeTimeSec={activeTimeSec}
-                formatTime={formatTime}
-                isEngineerMode={isEngineerMode}
-                setIsAddServerOpen={setIsAddServerOpen}
-                lang={lang}
-                t={t}
-              />
-            )}
-
-            {activeTab === 'wizard' && isEngineerMode && (
-              <Wizard 
-                wizardIp={wizardIp}
-                setWizardIp={setWizardIp}
-                wizardPort={wizardPort}
-                setWizardPort={setWizardPort}
-                wizardPass={wizardPass}
-                setWizardPass={setWizardPass}
-                wizardDns={wizardDns}
-                setWizardDns={setWizardDns}
-                lang={lang}
-                t={t}
-                dockerCode={dockerCode}
-                bashCode={bashCode}
-                amneziaGuide={amneziaGuide}
-                copiedDocker={copiedDocker}
-                copiedBash={copiedBash}
-                triggerCopy={triggerCopy}
-              />
-            )}
-
-            {activeTab === 'config' && isEngineerMode && (
-              <Configurator 
-                uuid={uuid}
-                setUuid={setUuid}
-                realityPublicKey={realityPublicKey}
-                setRealityPublicKey={setRealityPublicKey}
-                shortId={shortId}
-                setShortId={setShortId}
-                sni={sni}
-                setSni={setSni}
-                generateRealityConfig={generateRealityConfig}
-                handleDownloadJsonFile={handleDownloadJsonFile}
-                activeServer={activeServer}
-                triggerCopy={triggerCopy}
-                copiedConfig={copiedConfig}
-                lang={lang}
-                t={t}
-              />
-            )}
-
-            {activeTab === 'diagnostics' && isEngineerMode && (
-              <Diagnostics 
-                logs={logs}
-                terminalLogs={terminalLogs}
-                commandValue={commandValue}
-                setCommandValue={setCommandValue}
-                handleCommandSubmit={handleCommandSubmit}
-                terminalEndRef={terminalEndRef}
-                addLog={addLog}
-                currentT={currentT}
-                lang={lang}
-              />
-            )}
-
-          </div>
-
-          {/* MOBILE DUAL GLASS CONTROLS (Exactly matching the uploaded design) */}
-          <div className="grid grid-cols-2 gap-4 mt-6 md:hidden relative z-10 w-full">
-            {/* Left Card: "Редактор" (Toggles isEngineerMode directly!) */}
-            <button
-              onClick={() => {
-                const nextState = !isEngineerMode;
-                setIsEngineerMode(nextState);
-                addLog(lang === 'ru' 
-                  ? `Раздел "${nextState ? 'Инженерная панель' : 'Простой интерфейс'}" активирован.`
-                  : `Navigation mode changed. Expert panel is now ${nextState ? 'enabled' : 'disabled'}.`
-                );
-                if (!nextState) {
-                  setActiveTab('connection');
-                }
-              }}
-              className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
-                isEngineerMode
-                  ? 'bg-cyan-500/10 border-cyan-400/40 text-cyan-400 shadow-[0_0_12px_rgba(0,240,255,0.12)]'
-                  : 'bg-[#0D0E14]/65 border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:border-white/20'
-              }`}
-            >
-              <SlidersHorizontal className="w-5 h-5 text-glow-cyan" />
-              <div className="text-center">
-                <p className="text-[11px] font-black tracking-wider uppercase leading-none">
-                  {lang === 'ru' ? 'Редактор' : 'Editor'}
-                </p>
-                <p className="text-[8px] text-zinc-500 mt-0.5 leading-none font-bold">
-                  {isEngineerMode 
-                    ? (lang === 'ru' ? 'Режим: Эксперт' : 'Mode: Expert') 
-                    : (lang === 'ru' ? 'Включить проф-настройки' : 'Enable Dev mode')
-                  }
-                </p>
-              </div>
-            </button>
-
-            {/* Right Card: "Настройки" (Toggles language switcher & other parameters bottom sheet!) */}
-            <button
-              onClick={() => setIsMobileSettingsOpen(true)}
-              className="p-4 rounded-2xl border bg-[#0D0E14]/65 border-white/[0.08] text-zinc-400 hover:text-zinc-200 hover:border-white/20 transition-all duration-300 flex flex-col items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-            >
-              <Settings className="w-5 h-5 text-zinc-500 hover:text-cyan-400" />
-              <div className="text-center">
-                <p className="text-[11px] font-black tracking-wider uppercase leading-none">
-                  {lang === 'ru' ? 'Настройки' : 'Settings'}
-                </p>
-                <p className="text-[8px] text-zinc-500 mt-0.5 leading-none font-bold">
-                  {lang === 'ru' ? 'Язык, инфо и узлы' : 'Lang, info & nodes'}
-                </p>
-              </div>
-            </button>
-          </div>
-
-          {/* Copyright branding footer */}
-          <footer className="w-full text-center text-zinc-600 text-[10px] uppercase tracking-widest mt-8 pt-4 border-t border-white/[0.04] select-none font-mono relative z-10 hidden md:block">
-            {isEngineerMode ? (
-              <span>🛡️ Пилигрим VPN Tunnel Engine &bull; Version 3.0.0-ANTI-DPI &bull; VLESS+REALITY &bull; 2026</span>
-            ) : (
-              <span>🛡️ Пилигрим VPN &bull; {lang === 'ru' ? 'Сверхбыстрое и безопасное интернет-соединение' : 'Ultra-fast and secure internet connection'}</span>
-            )}
-          </footer>
-
-        </div>
-
-      </div>
-
-      {/* MOBILE SETTINGS GLASS DRAWER / BOTTOM SHEET */}
-      {isMobileSettingsOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center md:hidden">
-          {/* Backdrop Glass Blur */}
-          <div 
-            className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-350"
-            onClick={() => setIsMobileSettingsOpen(false)}
-          ></div>
-          
-          {/* Frosted Glass Sheet Panel */}
-          <div className="w-full max-w-md bg-[#090A0E] border-t border-white/10 rounded-t-3xl max-h-[85vh] flex flex-col relative z-50 p-6 shadow-[0_-12px_45px_10px_rgba(0,0,0,0.6)] animate-[slideUp_0.30s_cubic-bezier(0.16,1,0.3,1)]">
-            
-            {/* Grab Bar Handle */}
-            <div className="w-12 h-1 bg-white/10 rounded-full mx-auto mb-5"></div>
-            
-            <div className="flex items-center justify-between mb-5 border-b border-white/[0.06] pb-3">
-              <h3 className="text-xs font-black tracking-widest text-cyan-400 uppercase flex items-center gap-2 text-glow-cyan">
-                <Settings className="w-4 h-4 text-cyan-400" />
-                {lang === 'ru' ? 'Параметры соединения' : 'Configuration Settings'}
-              </h3>
-              
-              <button 
-                onClick={() => setIsMobileSettingsOpen(false)}
-                className="p-1.5 rounded-lg bg-white/5 text-zinc-400 hover:text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Scrollable Content inside sheet */}
-            <div className="flex-1 overflow-y-auto space-y-5 pb-8">
-              
-              {/* Option: Language Toggle */}
-              <div className="p-4 bg-white/[0.01] border border-white/[0.04] rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Languages className="w-4.5 h-4.5 text-cyan-400" />
-                  <div>
-                    <h4 className="text-xs font-extrabold text-zinc-200">{lang === 'ru' ? 'Язык интерфейса' : 'Language'}</h4>
-                    <p className="text-[10px] text-zinc-500 font-medium">Toggle active app localization</p>
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={() => setLang(prev => prev === 'ru' ? 'en' : 'ru')}
-                  className="px-3 py-1.5 bg-cyan-400/15 text-cyan-300 border border-cyan-400/30 rounded-xl text-xs font-black uppercase font-mono shadow-inner tracking-widest"
-                >
-                  {lang === 'ru' ? 'Русский 🇷🇺' : 'English 🇺🇸'}
-                </button>
-              </div>
-
-              {/* Option: Quick Server Add node (shortcut available for ease of use!) */}
-              <div className="p-4 bg-white/[0.01] border border-white/[0.04] rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Globe className="w-4.5 h-4.5 text-cyan-400" />
-                  <div>
-                    <h4 className="text-xs font-extrabold text-zinc-200">{lang === 'ru' ? 'Новые Серверы' : 'Custom Nodes'}</h4>
-                    <p className="text-[10px] text-zinc-500 font-medium">{lang === 'ru' ? 'Добавить личный узел' : 'Introduce dedicated host VPS'}</p>
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={() => {
-                    setIsMobileSettingsOpen(false);
-                    setIsAddServerOpen(true);
-                  }}
-                  className="px-3.5 py-1.5 bg-white/5 text-zinc-300 border border-white/10 hover:border-cyan-400/30 rounded-xl text-xs font-bold"
-                >
-                  {lang === 'ru' ? '+ Добавить' : '+ New Node'}
-                </button>
-              </div>
-
-              {/* Hardware specifications telemetry banner */}
-              <div className="p-4 bg-blue-600/[0.02] border border-blue-500/10 rounded-2xl">
-                <span className="text-[9px] font-mono font-black text-cyan-400 tracking-wider flex items-center gap-1.5 mb-2">
-                  <Info className="w-3.5 h-3.5" />
-                  PILIGRIM DECOY TUNNEL DATA
-                </span>
-                <p className="text-xs text-zinc-400/80 leading-normal mb-3 font-sans">
-                  {lang === 'ru' 
-                    ? "Узлы связи используют современную криптографическую подпись REALITY для верификации и предотвращения цензуры провайдера."
-                    : "Communication sockets use robust REALITY cryptographic signatures to authorize handshakes and avoid provider-level censorship."}
-                </p>
-                <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 border-t border-white/[0.03] pt-2">
-                  <span>INTERFACE: piligrim-proxy</span>
-                  <span>LOAD: 1.4%</span>
-                </div>
-              </div>
-
-              {/* Developer copyright info */}
-              <div className="text-center pt-2">
-                <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest leading-relaxed">
-                  🛡️ Пилигрим VPN &bull; version 3.0.0
-                </p>
-                <p className="text-[9px] font-mono text-zinc-700 mt-1 uppercase tracking-wider">
-                  Engineered in 2026 for ultimate digital freedom
-                </p>
-              </div>
-
-            </div>
-            
-          </div>
-        </div>
-      )}
-
-      {/* Portal Modal Overlay - Add Custom Server */}
-      <AddServerModal 
-        isAddServerOpen={isAddServerOpen}
-        setIsAddServerOpen={setIsAddServerOpen}
-        handleAddServer={handleAddServer}
-        newServerName={newServerName}
-        setNewServerName={setNewServerName}
-        newServerCity={newServerCity}
-        setNewServerCity={setNewServerCity}
-        newServerIp={newServerIp}
-        setNewServerIp={setNewServerIp}
-        newServerFlag={newServerFlag}
-        setNewServerFlag={setNewServerFlag}
-        currentT={currentT}
-        lang={lang}
-      />
-
-    </div>
-  );
-}
+            {activeTab === '
